@@ -3,6 +3,6 @@ LABEL maintainer='Michael Weylandt'
 COPY --chown=${NB_USER} . ${HOME}
 USER ${NB_USER}
 
-RUN wget https://github.com/michaelweylandt/STA9750-2024S/raw/master/DESCRIPTION && R -e "options(repos = list(CRAN = 'https://cloud.r-project.org'));"
+RUN wget https://github.com/michaelweylandt/STA9750-2024S/raw/main/DESCRIPTION && R -e "options(repos = list(CRAN = 'https://cloud.r-project.org'));"
 
 RUN rm DESCRIPTION.1; exit 0
