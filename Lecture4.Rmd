@@ -15,7 +15,7 @@ library(learnr)
 library(stringr)
 library(tidyverse)
 library(tibble)
-tutorial_options(exercise.timelimit = 60)
+library(nycflights13)
 ```
 
 # Welcome
@@ -512,7 +512,7 @@ printing it: think of the code as being the "value" and the function
 name as the variable name. (This isn't actually a metaphor - it's true!)
 
 
-# SQL-Like Data Manipulations in `R`
+## SQL-Like Data Manipulations in `R`
 
 In this section, you will learn how to:
 
@@ -523,25 +523,28 @@ In this section, you will learn how to:
 
 The readings in this tutorial follow [_R for Data Science_](http://r4ds.had.co.nz/), section 5.2.
 
-To practice these skills, we will use the `flights` data set from the nycflights13 package. This data frame comes from the US [Bureau of Transportation Statistics](http://www.transtats.bts.gov/DatabaseInfo.asp?DB_ID=120&Link=0) and contains all `r format(nrow(nycflights13::flights), big.mark = ",")` flights that departed from New York City in 2013. It is documented in `?flights`. This is the same dataset we used in the first lecture, but now in `R` instead of `sqlite`.
+To practice these skills, we will use the `flights` data set from the `nycflights13` package. This data frame comes from the US [Bureau of Transportation Statistics](http://www.transtats.bts.gov/DatabaseInfo.asp?DB_ID=120&Link=0) and contains all `r format(nrow(nycflights13::flights), big.mark = ",")` flights that departed from New York City in 2013. It is documented in `?flights`. This is the same dataset we used in the first lecture, but now in `R` instead of `sqlite`.
 
+To load it, we will use the `library(nycflights13)` command. Don't try to parse the BTS website
+unless you like living dangerously.
 
-## Filter rows with `filter()`
+### Filter rows with `filter()`
 
-### filter()
+#### filter()
 
 `filter()` lets you use a logical test to extract specific rows from a data frame. To use `filter()`, pass it the data frame followed by one or more logical tests. `filter()` will return every row that passes each logical test.
 
 So for example, we can use `filter()` to select every flight in flights that departed on January 1st. Click Run Code to give it a try:
 
 ```{r filter1, exercise = TRUE, exercise.eval = FALSE}
+library(nycflights13) # Load the flights data
 filter(flights, month == 1, day == 1)
 ```
 
 The `filter` function is similar to the `WHERE` clause in SQL. As we will later see, 
 it can also be used to implement the `HAVING` clause.
 
-###  output
+####  output
 
 Like all dplyr functions, `filter()` returns a new data frame for you to save or use. It doesn't overwrite the old data frame.
 
@@ -557,15 +560,15 @@ filter(flights, month == 1, day == 1)
 jan1 <- filter(flights, month == 1, day == 1)
 ```
 
-###
+####
 
 Good job! You can now see the results by running the name jan1 by itself. Or you can pass `jan1` to a function that takes data frames as input.
 
 Did you notice that this code used the double equal operator, `==`? `==` is one of R's logical comparison operators. Comparison operators are key to using `filter()`, so let's take a look at them.
 
-## Logical Comparisons
+### Logical Comparisons
 
-### Comparison operators
+#### Comparison operators
 
 R provides a suite of comparison operators that you can use to compare values: `>`, `>=`, `<`, `<=`, `!=` (not equal), and `==` (equal). Each creates a logical test. For example, is `pi` greater than three?
 
@@ -573,13 +576,13 @@ R provides a suite of comparison operators that you can use to compare values: `
 pi > 3
 ```
 
-###
+####
 
 When you place a logical test inside of `filter()`, filter applies the test to each row in the data frame and then returns the rows that pass, as a new data frame.
 
 Our code above returned every row whose month value was equal to one _and_ whose day value was equal to one.
 
-### Watch out!
+#### Watch out!
 
 When you start out with R, the easiest mistake to make is to test for equality with `=` instead of `==`. When this happens you'll get an informative error:
 
@@ -591,9 +594,9 @@ filter(flights, month = 1)
 
 If you give `filter()` more than one logical test, `filter()` will combine the tests with an implied "and." In other words, `filter()` will return only the rows that return `TRUE` for every test. You can combine tests in other ways with Boolean operators...
 
-## Boolean operators
+### Boolean operators
 
-### &, |, and !
+#### &, |, and !
 
 R uses boolean operators to combine multiple logical comparisons into a single logical test. These include `&` (_and_), `|` (_or_), `!` (_not_ or _negation_), and `xor()` (_exactly or_).
 
