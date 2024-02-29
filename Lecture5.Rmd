@@ -1,0 +1,336 @@
+---
+title: "Introduction to ggplot2, rmarkdown; Advanced Data Manipulations with dplyr"
+output:
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+runtime: shiny_prerendered
+description: >
+  This week we will introduce the ggplot2 plotting framework, as well as the
+  reproducible research framework `rmarkdown`. Time allowing, we'll also explore
+  the join functionality of `dplyr`.
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(stringr)
+library(tidyverse)
+library(tibble)
+library(ggplot2)
+library(nycflights13)
+```
+
+## Goals
+
+This week, we have three goals: 
+
+- Introduction of the `rmarkdown` framework
+- First steps with the `ggplot2` plotting library
+- Diving deeper into `dplyr`
+
+## RMarkdown
+
+We begin with the `rmarkdown` framework. 
+
+Open the `demo.Rmd` file in your `RStudio` window. Press the `knit` button at the
+top of the file editor to confirm that you have your environment set up properly. 
+(There shouldn't be an issue if you could render this file, but it's worth checking)
+
+Once that pops up, close it for now and come back here.
+
+### Documents as Code
+
+`Markdown` (`md`) is a document markup language (get the pun?) originally designed
+to make it easy to write web-pages. Because it was designed for websites, markdown
+is particularly well-suited for making `html` documents like this one, though
+other output formats  (*e.g.* PDFs) are possible. 
+
+Before exploring Markdown, let's pause and define what we mean by a _markup_ language.
+Document formats (and associated software) can be divided into two groups:
+
+- `WYSIWYG` (What you see is what you get): In these formats, you directly work
+  with the 'rendered' version of a document, and no post-processing is needed.
+  Microsoft Word is a classic example: what you see on your screen is what it
+  looks like on the page (assuming no printer errors).
+- `WYSIWYM` (What you see is what you mean): In these formats, you essentially
+  write *code* that defines both the content and formatting of a document. 
+  These formats can be complex (various XML based formats) or relatively simple
+  like Markdown. 
+  
+Why would we ever prefer WYSIWYM styles over alternatives? 
+
+- Ease of editing: because WYSIWYM formats are not tied to specific software, 
+  they can be edited anywhere.
+- Flexibility and Extensibility: When working in MS Word, you're basically only
+  able to create 'Word-type' documents. If you want to swap to a presentation, 
+  you have to exit Word and open Powerpoint. In WYSIWYM world, the same document
+  can be easily transformed from one format to another.
+- Separation of content from form. As we will see, WYSIWYM formats mark text as "important" 
+  or a "section header" (or similar), but leave the choice of what that means to 
+  software. If you want to later change from bold to italics for emphasis, you don't 
+  need to re-edit the entire document. 
+  
+Additionally, because WYSIWYM documents are plain text files, they can be used to
+create accessible documents more easily than WYSIWYG formats. 
+
+## First Steps with Markdown
+
+Markdown can be divided into four major formatting tools: 
+
+- Section Headers
+- Emphasis Formatting
+- Paragraph Structure
+- Web Content (e.g., links, embedded code, video *etc.*)
+
+Section headers are denoted by lines beginning with one or more `#` symbols.
+A single `#` represents a major title, with `##` representing sections, `###` subsections, *etc*.
+Most Markdown implementation stops at `####` but there is no reason why this couldn't be
+continued. 
+
+Emphasis formatting consists of one or more `*` characters surrounding the text to be
+emphasized: 
+
+- *one star*
+- **two stars**
+- ***three stars***
+
+Paragraphs are separated by a single blank line. New lines without space between
+them have no semantic meaning to markdown. They are just used to keep your code
+from getting too long (80 characters per line is a typical recommendation.)
+
+To create bulleted list, start one or more lines with a `-` character. To create numbered
+lists, start one or more lines with `1.`. (You can actually use any numbers, including
+repeats - Markdown is smart enough to know what you want)
+
+### Markdown Exercises
+
+Open `demo1.Rmd` and make the following changes: 
+
+1. Add your name to the header block
+2. Add a bullet list of your classes to the "About Me" section
+3. Add a new section titled "My Projects" and add a numbered list of
+   projects you have done for this and other classes. **Emphasize** each title.
+   
+Once you have done these, render (knit) the document and confirm that your changes
+took place. 
+
+## More Markdown
+
+In addition to basic formatting, Markdown supports many "programmer-relevant" 
+features, including code-style formatting `1+1=2`, [links](https://commonmark.org/help/tutorial), 
+and inline code blocks
+
+```{r, eval=FALSE}
+library(dplyr)
+library(nycflights13)
+glimpse(flights)
+```
+
+Go to the [CommonMark Tutorial](https://commonmark.org/help/tutorial) to explore these
+and more features of Markdown. 
+
+### More Markdown Exercises
+
+1. The St. Louis Blues are a jazz standard. Add a link to a YouTube performance of the
+   blues (by anyone) into your Markdown document. 
+ 
+2. Now turn the link into a embedded image / video. 
+   
+3. Use RStudio's built in templates to create a basic presentation using RMarkdown. 
+   (Hint: File > New)
+
+## But Wait - there's moRe!
+
+Ok - so that's the basics of *Markdown*. What is *RMarkdown*? 
+
+*RMarkdown* is the fusion of the computational tools of *R* with the 
+formatting tools of *Markdown*. 
+
+In short, *RMarkdown* adds a pre-processing hook to run *R* code before handing
+your document over to the rendering engine. *RMarkdown* will find any *R* code in your document, 
+run it and format the output for Markdown, and then pass the resulting pure-Markdown document
+off to the rendering engine. 
+
+Most of the time, we'll use code blocks like the one we showed above. These
+are blocked out with triple backticks and a little `r` (see the source of this document
+for many examples). Triple backticks indicate the end of a block. 
+
+You might have seen a similar idea with *Jupyter/IPython Notebook Cells*. There
+is a big conceptual difference however: 
+- Notebooks are executed manually (by the data analyst) and cells can be run
+  in any order (as long as that doesn't produce an error)
+- Markdown documents are run automatically "in order", so you have to define 
+  a variable earlier ("higher up") than when you want to use it.
+  
+### RMarkdown Exercises
+
+1. Take `demo.Rmd` and modify the code block to print the 10 most delayed flights.
+
+2. Add a code block that prints the numbers 1 to 10 in a loop. How does RMarkdown format the output?
+
+3. You can silence certain code blocks by adding `echo=FALSE` (to hide the code) 
+   or `include=FALSE` (to hide the output) to the block options. 
+   Add a code block to print "Hello, I love R Markdown" five times, but hide the code
+   and only show the output. 
+   
+4. You can also include the results of small snippets of *R* code using inline code: 
+   *e.g*. two times pi is approximately equal to `{r} 2*pi`. Add an inline block
+   to say how many rows are in the flights data frame. (Hint: you will want the `NROW` function.)
+
+   
+## Time to ggplot
+
+*R* has (at least) three popular sets of plotting functionality. We will focus on
+the **ggplot2** library in this course. 
+
+The name **ggplot2** comes from the term "Grammar of Graphics." (It's the second version
+of software implementing these ideas). The grammar of graphics refers to the idea
+that you can build plots systematically from complex structures of simple elements.
+
+These include: 
+
+- `geom`s: the actual "thing" drawn on the screen
+- `aes`thetics: a mapping from some feature of the data to some graphical characteristic
+   (*e.g.* x-axis location or color)
+
+Let's dig into `ggplot2`. We'll begin with the `penguins` dataset. 
+
+```{r}
+library(palmerpenguins)
+penguins
+```
+
+This is a table of 344 penguins (rows) from the Palmer antarctic research base. Scientists recorded
+the following 8 features (columns)
+
+- species
+- island
+- bill_length_mm
+- bill_depth_mm
+- flipper_length_mm
+- body_mass_g
+- sex
+- year
+
+Run the `?penguins` command to get information about each of these features. 
+
+```{r penguinhelp, exercise = TRUE}
+?penguins
+```
+
+We can plot this data using the `ggplot` command: 
+
+```{r gg1, exercise = TRUE}
+ggplot(penguins)
+```
+
+
+Awesome, no?
+
+### Adding more to our plots
+
+In order to get a useful plot, we need to add some of those geoms and aesthetics we
+discussed earlier. Let's first see how flipper and bill size are related by placing
+them on the `x` and `y` aesthetics. 
+
+```{r}
+ggplot(penguins, aes(x=bill_length_mm, flipper_length_mm))
+```
+
+This sort of starts to look like a plot, but we don't have any data points shown. 
+
+To actually show plots, we need a "geom" (geometric element) that will actually
+show our data. Let's start with a  simple scatter plot: 
+
+```{r}
+ggplot(penguins, aes(x=bill_length_mm, flipper_length_mm)) + geom_point()
+```
+
+Note that this is different than our `dplyr` analysis - we _add_ layers to the plot
+using the `+` operator; we don't _pipe_ our data using the `|>` operator.
+
+This is nice, but can we do better? How does this relationship vary by species? 
+Modify the previous examples to map the `species` variable to the `color` aesthetic. 
+
+```{r gg2, exercise=TRUE}
+ggplot(penguins, aes(x=bill_length_mm, flipper_length_mm)) + geom_point()
+```
+
+### Making Nicer Plots
+
+Now that we have a basic plot, let's focus on some ways of making it more attractive: 
+- axis labels
+- plot label
+- better colors
+- adding trend lines
+
+We can add labels to the x, y axes with the `xlab` and `ylab` functions. Change
+the x-axis label to "Bill Length (mm)" and the y-axis label to "Flipper Length (mm)". 
+
+```{r gg3, exercise=TRUE}
+ggplot(penguins, aes(x=bill_length_mm, flipper_length_mm, color=species)) + geom_point()
+```
+
+Remember - units are important! Also - while variable names are useful, you typicaly want
+to "English" them up when making actual plots for sharing.
+
+Next, let's clean up the colors. `ggplot2` comes with many built in palettes (sets of colors), 
+but I really like one from the `ggsci` package. 
+
+```{r}
+library(ggsci)
+```
+
+The `ggsci` package provides the `JCO` color scale. We can add it to our penguin plot
+
+```{r}
+ggplot(penguins, aes(x=bill_length_mm, flipper_length_mm, color=species)) + geom_point() + scale_color_jco()
+```
+
+Here we've _added_ a new scale to the plot, overriding the default. 
+
+`ggplot2` also uses a greyscale theme which is easy to look at on a screen. 
+
+Try out some of the [other color themes](https://ggplot2.tidyverse.org/reference/ggtheme.html) 
+from the `ggplot2` documentation. 
+
+```{r gg4, exercise=TRUE}
+ggplot(penguins, aes(x=bill_length_mm, flipper_length_mm, color=species)) + 
+    geom_point() + scale_color_jco() + 
+    theme_grey() ## CHANGE ME! theme_grey() is the default
+```
+
+Finally, add a smooth trend line using the `geom_smooth` function. 
+
+```{r gg5, exercise=TRUE}
+ggplot(penguins, aes(x=bill_length_mm, flipper_length_mm, color=species)) + 
+    geom_point() + scale_color_jco() + 
+    theme_grey() ## CHANGE ME! theme_grey() is the default
+```
+
+Now, fit a linear trend by passing the argument `method='lm'` to `geom_smooth`. 
+
+To finish this plot, improve the label of the color legend by passing a `name` argument
+to `scale_color_jco` and an overall plot title to `ggtitle` to make a publication
+ready plot.
+
+```{r gg6, exercise=TRUE}
+ggplot(penguins)
+```
+
+### ggplot Exercises
+
+Make plots to demonstrate the following: 
+
+- A histogram of bill depth
+- Species specific box plots of body mass
+- Violin plots comparing body mass by sex
+- Violin plots comparing body mass by sex for different species: use the `facet_grid` function
+
+The [ggplot2 docs](https://ggplot2.tidyverse.org) will be helpful. 
+
+## Happy Leap Day
+
+***Real Life is for March!***
+
+![](https://www.youtube.com/watch?v=Bc9-VVYseH0)

@@ -1,0 +1,48 @@
+---
+title: "STA9750 Demo"
+author: "One of God's Creatures"
+date: "2024-02-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# The Story of My Life. 
+
+Hi! This document has some information about me. 
+
+## About Me
+
+I have taken the following classes: 
+
+
+
+
+
+
+
+I would also like to tell you about my projects: basket weaving, stock market investing, 
+and robot wrestling. 
+
+
+## Code Block Demo
+
+```{r}
+library(nycflights13) # Has the flights data
+library(dplyr) # Sql type functionality
+
+glimpse(flights)
+```
+
+Let's find the ten flights arrived the most ahead of schedule
+
+```{r}
+flights %>%
+    arrange(arr_delay) %>%
+    slice_head(n=10) ## Roughly equivalent to LIMIT 10
+```
+
+
+The flights data has XXX flights.
