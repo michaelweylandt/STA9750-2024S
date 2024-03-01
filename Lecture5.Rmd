@@ -221,6 +221,7 @@ Run the `?penguins` command to get information about each of these features.
 We can plot this data using the `ggplot` command: 
 
 ```{r gg1, exercise = TRUE}
+library(palmerpenguins)
 ggplot(penguins)
 ```
 
@@ -234,6 +235,8 @@ discussed earlier. Let's first see how flipper and bill size are related by plac
 them on the `x` and `y` aesthetics. 
 
 ```{r}
+library(palmerpenguins)
+
 ggplot(penguins, aes(x=bill_length_mm, flipper_length_mm))
 ```
 
@@ -243,6 +246,8 @@ To actually show plots, we need a "geom" (geometric element) that will actually
 show our data. Let's start with a  simple scatter plot: 
 
 ```{r}
+library(palmerpenguins)
+
 ggplot(penguins, aes(x=bill_length_mm, flipper_length_mm)) + geom_point()
 ```
 
@@ -253,6 +258,8 @@ This is nice, but can we do better? How does this relationship vary by species?
 Modify the previous examples to map the `species` variable to the `color` aesthetic. 
 
 ```{r gg2, exercise=TRUE}
+library(palmerpenguins)
+
 ggplot(penguins, aes(x=bill_length_mm, flipper_length_mm)) + geom_point()
 ```
 
@@ -268,6 +275,8 @@ We can add labels to the x, y axes with the `xlab` and `ylab` functions. Change
 the x-axis label to "Bill Length (mm)" and the y-axis label to "Flipper Length (mm)". 
 
 ```{r gg3, exercise=TRUE}
+library(palmerpenguins)
+
 ggplot(penguins, aes(x=bill_length_mm, flipper_length_mm, color=species)) + geom_point()
 ```
 
@@ -295,6 +304,8 @@ Try out some of the [other color themes](https://ggplot2.tidyverse.org/reference
 from the `ggplot2` documentation. 
 
 ```{r gg4, exercise=TRUE}
+library(palmerpenguins)
+library(ggsci)
 ggplot(penguins, aes(x=bill_length_mm, flipper_length_mm, color=species)) + 
     geom_point() + scale_color_jco() + 
     theme_grey() ## CHANGE ME! theme_grey() is the default
@@ -303,6 +314,8 @@ ggplot(penguins, aes(x=bill_length_mm, flipper_length_mm, color=species)) +
 Finally, add a smooth trend line using the `geom_smooth` function. 
 
 ```{r gg5, exercise=TRUE}
+library(palmerpenguins)
+
 ggplot(penguins, aes(x=bill_length_mm, flipper_length_mm, color=species)) + 
     geom_point() + scale_color_jco() + 
     theme_grey() ## CHANGE ME! theme_grey() is the default
@@ -315,6 +328,7 @@ to `scale_color_jco` and an overall plot title to `ggtitle` to make a publicatio
 ready plot.
 
 ```{r gg6, exercise=TRUE}
+library(palmerpenguins)
 ggplot(penguins)
 ```
 
