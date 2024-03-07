@@ -7,18 +7,18 @@ output:
 runtime: shiny_prerendered
 description: >
   This week we will dive deeper the ggplot2 plotting framework and
-  the join functionality of `dplyr`. We will use a data set based on 
-  historical US birth rates to explore long-term trends, time-of-year, 
-  day-of-week, and holiday effects. 
+  the join functionality of `dplyr`. We will use a data set based on
+  historical US birth rates to explore long-term trends, time-of-year,
+  day-of-week, and holiday effects.
 ---
 
 ```{r setup, include=FALSE}
-PKGS <- c("learnr", "stringr", "tidyverse", "tidyr", "dplyr", "tibble", "ggplot2", "nycflights", "lubridate")
+PKGS <- c("learnr", "stringr", "tidyverse", "tidyr", "dplyr", "tibble", "ggplot2", "nycflights13", "lubridate")
 
 for(p in PKGS){
-    if(!require(p)){
+    if(!require(p, character.only=TRUE)){
         install.packages(p)
-        stopifnot(require(p))
+        stopifnot(require(p, character.only=TRUE))
     }
 }
 
@@ -109,14 +109,14 @@ quiz(caption = "Quiz - Markdown Syntax",
 Before exploring new material, let's review `dplyr` and `ggplot2` on some new data sets. The file `births.csv` contains records of the number of babies born in the US (as reported to the Social Security Administration) every day for a 20 year period. 
 
 ```{r}
-if(!file.exists("births.csv")){
+if(!file.exists("~/births.csv")){
     download.file("https://raw.githubusercontent.com/michaelweylandt/STA9750-2024S/main/births.csv", 
-                  destfile="births.csv")
+                  destfile="~/births.csv")
 }
 library(readr)
 library(dplyr)
 
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 glimpse(births)
 ```
 
@@ -141,13 +141,13 @@ tools we covered two weeks ago:
 
 How many children were born on January 1st, 1984? 
 ```{r ex1, exercise = TRUE}
-if(!file.exists("births.csv")){
+if(!file.exists("~/births.csv")){
     download.file("https://raw.githubusercontent.com/michaelweylandt/STA9750-2024S/main/births.csv", 
-                  destfile="births.csv")
+                  destfile="~/births.csv")
 }
 library(readr)
 library(dplyr)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 ```
 
 ```{r ex1-solution}
@@ -159,7 +159,7 @@ How many total children were born in 1984?
 ```{r ex2, exercise = TRUE}
 library(readr)
 library(dplyr)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 ```
 
 ```{r ex2-solution}
@@ -171,7 +171,7 @@ How many children were born each year? (Print a 20 row table)
 ```{r ex3, exercise = TRUE}
 library(readr)
 library(dplyr)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 ```
 
 ```{r ex3-solution}
@@ -183,7 +183,7 @@ How many more children were born each year than the preceeding? (The `lag` funct
 ```{r ex4, exercise = TRUE}
 library(readr)
 library(dplyr)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 ```
 
 ```{r ex4-solution}
@@ -198,7 +198,7 @@ On average, in what month are the most children born?
 ```{r ex5, exercise = TRUE}
 library(readr)
 library(dplyr)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 ```
 
 ```{r ex5-solution}
@@ -223,7 +223,7 @@ Plot the the number of births as a function of the day of the year (there will b
 library(readr)
 library(dplyr)
 library(ggplot2)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 ```
 
 ```{r ex6-solution}
@@ -237,7 +237,7 @@ number of children born on each day of the year:
 library(readr)
 library(dplyr)
 library(ggplot2)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 ```
 
 ```{r ex7-solution}
@@ -515,7 +515,7 @@ Plot the average daily number of births per year (years on the $x$ axis, daily b
 ```{r ex8, exercise = TRUE}
 library(readr)
 library(dplyr)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 ```
 
 ```{r ex8-solution}
@@ -537,7 +537,7 @@ Plot the average number of children born on each day of the year in the 1970s:
 ```{r ex9, exercise = TRUE}
 library(readr)
 library(dplyr)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 ```
 
 ```{r ex9-solution}
@@ -554,7 +554,7 @@ Now add a line connecting the points so you can see a trend:
 ```{r ex10, exercise = TRUE}
 library(readr)
 library(dplyr)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 ```
 
 ```{r ex10-solution}
@@ -572,7 +572,7 @@ decade (still taking decadal average births per day) and a line for each decade:
 ```{r ex11, exercise = TRUE}
 library(readr)
 library(dplyr)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 ```
 
 ```{r ex11-solution}
@@ -590,7 +590,7 @@ This is a bit weird because of the "weekend effect": repeat this analysis, but n
 ```{r ex12, exercise = TRUE}
 library(readr)
 library(dplyr)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 ```
 
 ```{r ex12-solution}
@@ -609,7 +609,7 @@ Now clean up this plot with proper labels and a better color scheme (your choice
 ```{r ex13, exercise = TRUE}
 library(readr)
 library(dplyr)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 ```
 
 ```{r ex13-solution}
@@ -769,7 +769,7 @@ Make a facet plot to show the yearly birth counts as a function of day of year:
 ```{r ex14, exercise = TRUE}
 library(readr)
 library(dplyr)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 ```
 
 ```{r ex14-solution}
@@ -783,7 +783,7 @@ Using the `lubridate` functionality from above, replace `day_of_year` with a pro
 ```{r ex15, exercise = TRUE}
 library(readr)
 library(dplyr)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 ```
 
 ```{r ex15-solution}
@@ -799,7 +799,7 @@ Are there certain days of the year that have fewer births than others? Use `dply
 ```{r ex16, exercise = TRUE}
 library(readr)
 library(dplyr)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 ```
 
 ```{r ex16-solution}
@@ -814,7 +814,7 @@ So Christmas-time birthdays are indeed rarer! (Why?) Use a facet plot to visuali
 ```{r ex17, exercise = TRUE}
 library(readr)
 library(dplyr)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 ```
 
 ```{r ex17-solution}
@@ -830,7 +830,7 @@ Modify this plot to compare these effects across decades. You will probably want
 ```{r ex18, exercise = TRUE}
 library(readr)
 library(dplyr)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 ```
 
 ```{r ex18-solution}
@@ -1019,7 +1019,7 @@ Plot a histogram of the number of births on a given day:
 library(readr)
 library(dplyr)
 library(ggplot2)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 ```
 
 ```{r ex19-solution}
@@ -1034,7 +1034,7 @@ Convert this histogram to a frequency polygram and break it out by day of week:
 library(readr)
 library(dplyr)
 library(ggplot2)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 ```
 
 ```{r ex20-solution}
@@ -1047,7 +1047,7 @@ Use a boxplot to visualize the effect of month on number of births:
 library(readr)
 library(dplyr)
 library(ggplot2)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 ```
 
 ```{r ex21-solution}
@@ -1065,7 +1065,7 @@ Plot this table using `ggplot` with `geom_title` to create a "birthday heatmap."
 library(readr)
 library(dplyr)
 library(ggplot2)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 
 births |>
     summarize() |>
@@ -1143,7 +1143,7 @@ Use the theme machinery to "fancy up" some of the plots from earlier exercises.
 library(readr)
 library(dplyr)
 library(ggplot2)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 
 ggplot(births, aes(x=births, color=factor(day_of_week))) + geom_freqpoly()
 ```
@@ -1171,7 +1171,7 @@ all $y$ axis adornments.
 library(readr)
 library(dplyr)
 library(ggplot2)
-births <- read_csv("births.csv")
+births <- read_csv("~/births.csv")
 ggplot(births, aes(x=births, color=factor(month))) + geom_boxplot()
 ```
 
