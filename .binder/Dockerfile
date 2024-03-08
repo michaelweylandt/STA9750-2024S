@@ -3,6 +3,6 @@ LABEL maintainer='Michael Weylandt'
 COPY --chown=${NB_USER} . ${HOME}
 USER ${NB_USER}
 
-RUN wget https://github.com/michaelweylandt/STA9750-2024S/raw/main/DESCRIPTION && R -e "options(repos = list(CRAN = 'https://cloud.r-project.org')); install.packages(c('tidyverse', 'learnr', 'nycflights13', 'knitr', 'rmarkdown', 'shiny', 'palmerpenguins', 'ggplot2', 'ggsci')); devtools::install_deps()"
+RUN wget https://github.com/michaelweylandt/STA9750-2024S/raw/main/DESCRIPTION && R -e "options(repos = list(CRAN = 'https://cloud.r-project.org')); install.packages(c('tidyverse', 'learnr', 'nycflights13', 'knitr', 'rmarkdown', 'shiny', 'palmerpenguins', 'ggplot2', 'ggsci', 'hexbin')); devtools::install_deps()"
 
 RUN rm DESCRIPTION.1; exit 0
