@@ -407,18 +407,21 @@ more examples of regular expressions.
 #### Exercises
 
 1. Use a regular expression to find which of these are fish species:
+
 ```{r ex1_sum, exercise=TRUE}
 x <- c("clownfish", "goldfish", "fish food")
 str_detect(x, )
 ```
 
 2. Use a regular expression to find words with three or more vowels in a row:
+
 ```{r ex2_sum, exercise=TRUE}
 x <- c("haaar", "xjjejeje", "youins", "exigent")
 str_detect(x, )
 ```
 
 3. Find the words where "q" is not followed by a "u"
+
 ```{r, ex3_sum, exercise=TRUE}
 x <- c("queen", "quiet", "qipao", "coq au vin")
 str_detect(x, )
