@@ -1,0 +1,676 @@
+---
+title: "Statistical Modeling and Inference Using R"
+output:
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+runtime: shiny_prerendered
+
+---
+
+```{r setup, include=FALSE}
+PKGS <- c("learnr", "stringr", "tidyverse", "tidyr", "dplyr", "tibble", "ggplot2", "nycflights13", "lubridate", "infer")
+
+for(p in PKGS){
+    if(!require(p, character.only=TRUE)){
+        install.packages(p)
+        stopifnot(require(p, character.only=TRUE))
+    }
+}
+
+library(learnr)
+library(stringr)
+library(tidyverse)
+library(tidyr)
+library(dplyr)
+library(tibble)
+library(ggplot2)
+library(nycflights13)
+```
+
+## Intro
+
+This week, we examine *statistical inference* using *R*. We will cover classical
+theory-driven (parametric) inference as well as more modern computer-based tools
+for inference. Before beginning, we will review the basic definitions you 
+learned in STA9708 (or similar). Next week, we will discuss building (predictive)
+models in *R*. As you work through these exercises, consider how these techniques
+can be used to answer the questions you posed in your final project proposals.
+
+In what follows, we focus on the "hypothesis testing" side of inference, but it is 
+possible to adapt most of these techniques to confidence intervals as well.
+
+## Statistical Inference
+
+Before getting into the code, let's review the basic definitions of null hypothesis
+testing. 
+
+### Basic Paradigm
+
+The basic paradigm of statistical testing is as follows:
+
+1. Posit a baseline ("null") hypothesis
+2. Define some summary function of the data ("test statistic") the can be used to
+   measure conformity with the null hypothesis
+3. Compute the _critical value_ of the test statistic - *i.e.*, "how weird is too
+  weird to happen by chance"
+4. Compute the observed value of the test statistic and compare it to the cricial value
+5. If the observed test statistic is "more weird" than would happen by chance (the critical value)
+  **reject the null**
+  
+Let's explore this idea in a super-simplified example before coming back to the minor points. 
+
+
+### Number of Taxis 
+
+Suppose you are interested in the number of licensed taxis in NYC. You know that the TLC
+(Taxi and Limosouine Commission) issues taxi licenses (medallions) in increasing
+numerical order, without skipping any numbers. You can also assume that no medallion
+is ever retired (so Taxi #1 is still out there somewhere) because TLC medallions are
+so valuable. 
+
+Your baseline guess it that there are 10,000 taxis in NYC and that if you hail a cab, 
+you will get one of these uniformly at random. This is your _null hypothesis_. 
+
+To "check your guess", you decide to record the number of the next taxi you get in. 
+If this number is low, it stands to reason there aren't too many taxis out there; while
+a large number would suggest there are more medallions. 
+
+For example, if you get a taxi  with medallion number 3, it would be quite 
+surprising if there were 1 million taxis - what are the chances of getting such
+a low number? Conversely, Medallion number 3 would not be surprising
+in a world of 5 taxis. 
+
+On the other extreme, if you observe taxi 9,999; it becomes harder to believe that there
+are only 10,000 taxis. What are the chances you got the "next to last" taxi? And clearly 
+if you see taxi license 20,000, you know there are more than 10,000 licensed taxis!
+
+Here, we are using the taxi number as the _test statistic_. (With only one taxi, we don't 
+have much choice: if we had data from several rides, we could use summaries like the mean, median, 
+or maximum.)
+
+So - what evidence do we have to see to reject our assumption of 10,000 cabs? Clearly, seeing
+any cab with number > 10,000 is sufficient, but we typically don't require evidence to be quite
+so strong. (This is the question of "confidence" in statistics) For now, let's say that seeing
+any license number over 9,500 is "too weird to happen by chance" - this is our _critical value_. 
+
+Now - you actually go hail a cab and see that it's number 9,750 - that's the _observed value_ 
+of the test statistic. (The _statistic_ is the "function" - the critical and observed values are 
+specific numbers)
+
+Because the observed value is "beyond" the critical value (here greater than is the "too weird"
+direction), we _reject the null hypothesis_ and now assume there are more than 10,000 taxis in NYC. 
+
+### Technical Points
+
+1. This process doesn't require an _alternative_ hypothesis: we never say "10,000 vs XXXX" taxis. 
+   We're only concerned with "10,000 or not 10,000". 
+2. We used a point null (exactly 10,000 taxis), not a composite null (at most 10,000 taxis). 
+3. We didn't actually discuss how to compute a critical value yet. Let's do that next. 
+
+[Historical note: this is a version of the so-called "German Tank Problem" where the US Intelligence
+Services tried to estimate the total number of Nazi tanks during World War II. It's much harder
+if you allow the possibility the numbers are chosen to confuse the enemy: *e.g.*, Seal Team Six.]
+
+### Computing the Critical Value
+
+Earlier, we posited 9,500 as the critical value of the observed license number. Where did this come from? 
+
+To select a _critical value_, we need a notion of _confidence_, essentially, an evidentiary standard.
+Law has a range of evidentiary standards ranging from "proponderance of the evidence" (more likely than not)
+to "beyond a reasonable doubt." In statistics, we quantify this standard by 
+_the probability of falsely rejecting the null_, *i.e.*, the chance that the "sufficiently weird thing" 
+happens by chance. Conventionally, this is taken to be 5% - giving 95% confidence - but that value
+is somewhat arbitrary. 
+
+In our situation, we can think about our taxi example at 95% confidence. Because we 
+calculating the chance of false rejection, the null is assumed true (if it weren't, the
+rejection wouldn't be false). And hence we can generate samples from it. 
+
+Our analysis is ultimately a "multi-verse": we generate several possible realities
+where the null is true and see what the test statistic looks like in those. Like any 
+good scifi, these multiversal realities are independent. 
+
+Let's see what our test statistic looks like when the null is true. The _sample_ function
+lets us pull one element of the set `1:10000`. The _replicate_ function lets us repeat 
+the act of sampling many times
+
+```{r}
+N_null <- 10000
+test_stat_null_dist <- replicate(50000, {# Arbitrary large number
+   sample(N_null, 1) # compute test statistic
+})
+
+hist(test_stat_null_dist)
+```
+
+This is basically a uniform distribution (why?) and would exactly be a uniform distribution
+if we performed enough replicates. To get the 95% confidence test statitic, we take the
+95% percentile of this distribution:
+
+```{r}
+critical_test_stat <- quantile(test_stat_null_dist, 0.95)
+print(critical_test_stat)
+```
+
+Hence, if we see a medallion number greater than that, we should reject the null.
+This gives a testing procedure with _95\% confidence_. 
+
+Note that the confidence is a statement _about the procedure_ not about any one result: our procedure
+is designed to give certain guarantees _when the null is true_. If the null is not true, we don't really 
+have a notion of confidence - for that sample - but we still have one for the procedure and that gives
+us confidence in the results of the procedure on a particular sample. (Obnoxiously technical - but that's the way it goes.) There's an analogy here to criminal procedure: the rules are designed to avoid sending
+innocent people to jail, but the system doesn't guarantee all guilty people get convictions. 
+And just because someone is found "not guilty" doesn't guarantee they are innocent. (In fact, 
+that's exactly why juries find "not guilty" in the US and not "innocent." No final judgement
+on the person - only saying the procedure wasn't satisfied.)
+
+### Extensions
+
+The above story is the "basic story" of statistical inference, but there is much more
+that could be said. 
+
+In particular, you might ask: 
+
+- How do a pick the "best" test statistic?
+- Are there other ways to find the critical value? 
+- What "direction" should we do the comparison between the observed test statistic
+  and the critical value?
+- This gives limits on the _false positive_ probability: but what about _false negatives_? 
+  *I.e.*, if our assumed model (null) is wrong - will we actually notice? 
+  
+These are important questions, but we won't address them today. 
+
+### Mini-Quiz
+
+
+```{r theory_quiz, echo=FALSE}
+question("What does confidence measure? (Select ALL that apply)", 
+         answer("The level of evidence required to reject the null", correct=TRUE),
+         answer("The probability of a false rejection of the null", correct=TRUE), 
+         answer("The probability that the alternative hypothesis is true"), 
+         answer("The probability that the null hypothesis is true"), 
+         answer("The probability that the alternative hypothesis is false"),
+         answer("The probability that the null hypothesis is false"),
+         answer("The probability that the hypothesis test gives the right result"),
+         random_answer_order = TRUE)
+question("What is the null hypothesis?", 
+         answer("One or more assumptions about the data generating process", correct=TRUE), 
+         answer("A statement about the mean of the true distribution"), 
+         answer("A statement about the mean of the observed data"), 
+         answer("The critical value of the test statistic"), 
+         random_answer_order = TRUE)
+
+question("What is the test statistic? (Select ALL that apply)", 
+         answer("A quantity used to assess how well the observed data fits the null", correct=TRUE), 
+         answer("A function of the data set", correct=TRUE), 
+         answer("A number"), 
+         answer("A positive number"), 
+         random_answer_order = TRUE)
+```
+
+## Computing Critical Values
+
+Let's return to the question of critical values. 
+
+In general, there are three approaches to getting critical values: 
+
+- Parametric Calculations: If we assume the null distribution, it is possible to 
+  lots of lengthy mathematical calculations to exactly figure out the _distribution_
+  of the test statistic under the null (the sampling distribution) and derive
+  the optimal critical value. This approach is quite powerful - and forms the basis
+  of classical statistics - but it requires strong modeling assumptions and even
+  stronger mathematical skills. We won't pursue it here, other than to note that
+  90% of the prominence of the "normal distribution" in statistics courses comes down
+  to the fact that the normal distribution is the easiest null distribution to do
+  these calculations. 
+  
+- Parametric Simulation: If we assume the null distribution, we can usually use a 
+  computer to generate realizations of the sampling distribution of the test statistic. (You did
+  this with the sample median under a $t$-distribution in previous homework.) At this point, 
+  we can let the computer get a high precision approximation of the sampling distribution for us
+  (by repeating this process many times over) and using that to get a critical value. 
+  This is what we did above with the taxi example.
+  
+- Nonparametric Simulation: What if we don't want to assume a full distribution for the null, 
+  but only some aspect of it? *E.g.*, instead of assuming we have "uncorrelated normal distributions",
+  we want to assume "uncorrelated" but not assume "normal." This is possible, and we'll discuss it in some
+  more detail below. 
+
+### Parametric Calculations
+
+Perhaps the most common parametric statistical test is the (Student) $t$-test
+for the mean of a normal distribution with unknown variance. R implements this
+with the `t.test` function. 
+
+For instance, we can use the two-sample version to see how self-reported hours works
+relates to sex in America. The `gss` data from the `infer` package contains 50
+random sample Americans from the Census Bureau's General Social Survey (a few years back). 
+
+```{r}
+library(infer)
+library(dplyr)
+glimpse(gss)
+```
+
+```{r}
+t.test(hours ~ sex, data=gss)
+```
+
+Here, we compare the distribution of `hours` (the response on the left hand side of the `~`)
+as it varies by `sex` (the "covariate" or "predictor" on the right hand side). This data
+shows a significant difference, with a small $p$-value - indicating very strong evidence
+against the null of "no difference."
+
+Because this test is so common, *R* implements it for us, but we could also perform
+the calculations ourselves. Specifically, given the test statistic $t = 5.1268$
+we can compute the $p$-value: 
+
+```{r}
+pt(-5.1268, 490.14, lower.tail=TRUE) + pt(5.1258, 490.14, lower.tail=FALSE)
+```
+
+(This is a two-sided test: don't worry about that detail if you haven't seen it before). 
+
+*R* provides built in functions to compute properties of several distributions, following
+a consistent pattern: `[L][DIST]`, where:
+
+- `[L]` gives the function:
+  - `r` - random samples
+  - `d` - Probability density (mass) function (PDF/PMF)
+  - `p` - Cumulative distribution (mass) function (CDF)
+  - `q` - Inverse CDF ("quantile function")
+- `[DIST]` distribution:
+  - `norm` - Normal Distribution
+  - `unif` - Uniform distribution
+  - `t` - $t$-Distribution
+  - `binom` - Binomial Distribution
+  - `chisq` - Chi-Squared Distribution
+  - Many more - see `?Distributions` for details
+
+### Parametric Simulations
+
+As noted above, when the exact math is too hard to perform, we can get a sense of
+the distribution by sampling from it directly. This is sometimes called the _Monte Carlo_
+method after the famous European casino. (In the long run, the house always wins: in the long-run, 
+repeated random samples converge to the right answer.)
+
+For instance, if we want the sampling distribution of the median of 5 samples from a $\chi^2$ 
+distribution with 4 degrees of freedom, we would do something like this: 
+
+```{r}
+sampling_dist <- replicate(50000, {
+    x_samples <- rchisq(5, df=4)
+    median(x_samples)
+})
+hist(sampling_dist)
+```
+
+We can see here that the distribution is centered around 4, but calculating
+this exactly would actually be rather tricky. In particular, note that this distribution
+is skewed and slightly heavy tailed - all things where its difficult to have proper intuition.
+
+### Non-Parametric Simulations
+
+The most exciting aspect of using computers for statistical inference is not avoiding math - 
+though that is great - but avoiding distributional models altogether. When we assume
+a particular null distribution, our test is testing _every aspect_ of that distribution - even
+the parts we don't want. For example, if our null is a normal distribution with mean 3, but
+we reject it based on the data: it could mean that the mean is not actually 3 ___or___ it 
+could mean that the data is not actually normally distributed. This is a bit of a weakness: 
+we never really believed the "normal distribution" part of the null - nothing is perfectly
+normally distributed - but we needed it to do our math or simulations. 
+
+_Non-parametric_ testing - that is, testing without assuming a particular distribution - 
+lets us focus our test only on the thing we actually care about (*e.g.*, mean 3 or "uncorrelated".)
+
+We will discuss two forms of non-parametric testing in the next few sections: 
+
+- Bootstrap Resampling
+- Permutation Testing
+
+We will discuss these further in the next two sections. 
+
+### Exercises
+
+1. Let $X \sim \mathcal{N}(3, 2^2)$ be normally distributed with mean 3 and standard deviation 2.
+   Using `pnorm`, what is the probability that $X$ is negative? 
+   
+```{r, ex1, exercise=TRUE}
+pnorm(...)
+```
+
+2. Let $X \sim \mathcal{N}(3, 2^2)$ be normally distributed with mean 3 and standard deviation 2.
+   Using `rnorm` and `mean` (optionally `replicate`), what is the probability that $X$ is negative? 
+   
+```{r, ex2, exercise=TRUE}
+mean(rnorm(...))
+```   
+
+3. Let $X, Y, Z \sim \mathcal{N}(3, 2^2)$ be independently normally distributed with mean 3 and standard deviation 2.
+   Using `rnorm` and `mean` (optionally `replicate`), what is the probability that $\text{median}(X, Y, Z)$ is negative?
+   
+```{r, ex3, exercise=TRUE}
+mean(rnorm(...))
+```   
+4. Under the null, $T$ is the maximum of 4 $\chi^2$ random variables with 3 degrees of freedom. What
+   is the expected value of $T$?
+
+```{r, ex4, exercise=TRUE}
+max(rchisq(...))
+```   
+
+5. Under the null, $T$ is the maximum of 4 $\chi^2$ random variables with 3 degrees of freedom. What
+   is the 95th-percentile of the distribution of $T$ so we can use it for a critical value?
+
+```{r, ex5, exercise=TRUE}
+max(rchisq(...))
+```   
+
+6. Using the `t.test` function, test the null hypothesis that subjects in both groups have
+   the same average excess hours of sleep. 
+   
+```{r, ex6, exercise=TRUE}
+sleep
+?t.test
+```
+
+## Tests of Centrality
+
+Perhaps the most common form of statistical test is a _test of centrality_: that is, 
+a test about the mean or median of a distribution. (If you squint, tests of variance
+are tests of centrality as well - centrality of $X^2$ instead of $X$.) For instance, 
+building on our $t$-test example above, we might want to compare reported hours worked
+by sex, but without using the normal assumption to justify our math. 
+
+The _bootstrap_ gives us a technique to do this: we generate samples like before, 
+but instead of using a postulated distribution, we _use the distribution of the data_. 
+Specifically, we generate our "new data" by sampling _with replacement_ from the original data. 
+
+For example, if we want a bootstrap estimate for the mean of self-reported hours worked:
+
+```{r}
+hours <- gss %>% pull(hours)
+boot_means <- replicate(50000, {
+    boot_hours <- sample(hours, replace=TRUE)
+    mean(boot_hours)
+})
+hist(boot_means)
+```
+
+It's not obvious that this actually works - and for many years (about 15 years from 1980 to 1995)
+this was a big fight in the statistical community. Now that bootstrapping has been studied, 
+it has been shown that this _generally_ works, but has some sharp corners that we won't discuss here. 
+
+To do a bootstrap test of the "men self-report more work hours than women" null hypothesis, 
+we can get a bootstrap sample on the difference between the two sexes: 
+
+```{r}
+boot_diffs <- replicate(1000, {
+    n <- gss |> NROW()
+    gss_boot <- sample_n(gss, n, replace=TRUE)
+    gss_boot |> 
+        group_by(sex) |> 
+        summarize(mean_hrs = mean(hours)) |>
+        arrange(desc(sex)) |>
+        pull(mean_hrs) |>
+        diff() # Female comes first in alphabetical order so this is male - female
+})
+hist(boot_diffs)
+```
+
+Here, the results are all positive, giving us high confidence that men self-report more hours worked. 
+
+#### Why does the bootstrap work? 
+
+At a high level, the bootstrap relies on the idea that - if we don't want to put a model
+on the data - our best approximation of the true distribution is the data itself. With enough data, 
+the observed distribution will match the true distribution, so (re)sampling from the observed distribution
+is approximately sampling from the true distribution. The fact that this can work
+better than assuming a model is much more subtle. 
+
+### Exercises
+
+7. Using the bootstrap technique, test the null hypothesis that subjects in both groups have
+   the same average excess hours of sleep. 
+   
+```{r, ex7, exercise=TRUE}
+sleep
+?t.test
+```
+
+8. Using the `lakers` data from the `lubridate` package, compute the total number of points scored by
+   each player in each game. 
+   
+```{r, ex8, exercise=TRUE}
+library(dplyr)
+library(lubridate)
+lakers
+```
+
+9. Using your result from the previous question, use a bootstrap test to test whether Dwyane Wade scores
+   more points per game than Kobe Bryant. 
+   
+```{r, ex9, exercise=TRUE}
+library(dplyr)
+library(lubridate)
+lakers
+```
+
+10. Using your result from the previous question, use a bootstrap test to test whether Dwyane Wade makes more attempts
+   per game than Kobe Bryant. 
+   
+```{r, ex10, exercise=TRUE}
+library(dplyr)
+library(lubridate)
+lakers
+```
+
+## Tests of Association
+
+Another broadly useful class of statistical tests are _tests of association_: is one
+variable related to another? Most classically, this is expressed via (Pearson) correlation, but
+many alternative measures have been proposed because standard correlation misses strong but
+non-linear relationships. 
+
+![](./images/correlation_counters.png){width=50%}
+
+There are many ways of testing association, but one particularly powerful one is
+the _permutation testing_ framework. If $X, Y$ are independent, then we can
+reorder $Y$ (without reordering $X$) without changing the distribution. 
+
+Let's go back to our penguins example and investigate the relationship between flipper length
+and body mass: 
+
+```{r}
+library(ggplot2)
+library(palmerpenguins)
+ggplot(penguins, aes(x=flipper_length_mm, y=body_mass_g)) + geom_point()
+```
+
+Clearly, there is a strong positive relationship here: as penguins weigh more, they need
+bigger flippers to propel themselves. We can see that, if we permute one variable, the relationship
+more or less vanishes:
+
+```{r}
+library(ggplot2)
+library(palmerpenguins)
+penguins_permuted <- penguins %>% filter(complete.cases(.)) %>% mutate(body_mass_g = sample(body_mass_g))
+ggplot(penguins_permuted, aes(x=flipper_length_mm, y=body_mass_g)) + geom_point()
+```
+
+We can repeat this process many times over to get a sense of the distribution of the correlation statistic
+_under the null distribution of independence_:
+
+```{r}
+boot_corr<- replicate(1000, {
+    penguins_permuted_corr <- penguins %>% 
+        filter(complete.cases(.)) %>% 
+        mutate(body_mass_g = sample(body_mass_g)) %>%
+        summarize(corr=cor(flipper_length_mm, body_mass_g)) %>%
+        pull(corr)
+})
+hist(boot_corr)
+```
+
+The actual penguin data has a correlation of 
+
+```{r}
+penguins %>% 
+    filter(complete.cases(.)) %>% 
+    summarize(corr=cor(flipper_length_mm, body_mass_g)) %>%
+    pull(corr)
+```
+
+which is far outside the permutation distribution. Hence our observed test statistic (true correlation)
+is far outside the permutation distribution, so it's unlikely to have occurred by pure chance. We - once again - 
+have evidence to strongly reject the null (no association) hypothesis but don't need to use any statistical models 
+for our data. 
+
+### Exercises
+
+11. Generate $X, Y$ as 50 independent samples (each) from the standard normal distribution. Use a permutation test to show that
+    there is no correlation between them. 
+   
+```{r, ex11, exercise=TRUE}
+X <- rnorm
+Y <- rnorm
+cor(X, Y)
+```
+
+12. The `co2` data reports atmospheric CO2 levels at an observatory in Hawaii. Use a permutation
+    test to see if there is an upward trend in this data. 
+    
+```{r, ex12, exercise=TRUE}
+co2_df <- data.frame(co2, sample_id=1:468)
+```
+
+13. The `txhousing` data set reports the number of monthly home sales in various cities in Texas.
+    Use a permutation test to see if there is a correlation between the number of sales and the number of listings. 
+
+```{r, ex13, exercise=TRUE}
+library(dplyr)
+txhousing_c <- na.omit(txhousing)
+cor(txhousing_c$sales, txhousing_c$listings)
+```   
+
+14. Using the `airquality` data set, is there a correlation between the temperature and the level of ozone in NYC weather? Test this
+    using a permutation test.
+
+```{r, ex14, exercise=TRUE}
+airquality_c <- na.omit(airquality)
+with(airquality_c, cor(Ozone, Temp))
+```
+
+15. The `txhousing` data set reports the number of monthly home sales in various cities in Texas.
+    Use a permutation test to see if there is a correlation between the number of sales in Houston
+    and the number of Sales in Dallas.
+    
+```{r, ex15, exercise=TRUE}
+library(dplyr)
+txhousing_c <- na.omit(txhousing)
+```    
+
+*Bonus*: Di Cook is an Australian statistician who uses these ideas to perform statistical inference
+without using numbers. Read through [her slides](https://www.dicook.org/files/ncb2021/slides#1) on this topic
+and consider whether this approach might be of interest to you.
+
+## The Infer Package
+
+The `infer` package automates this process for many standard statistical analyses. 
+Read the [introductory vignette](https://infer.tidymodels.org/articles/t_test.html) to
+get used to this package and then work through the following examples using the `penguins` data. 
+You may find the [full pipeline vignette helpful as well](https://infer.tidymodels.org/articles/observed_stat_examples.html).
+
+Note that you will want to drop the rows of the penguins table with null values before
+performing most of these tests. 
+
+```{r}
+library(palmerpenguins)
+library(dplyr)
+penguins_c <- penguins %>% filter(complete.cases(.))
+```
+
+### Exercises
+
+1. Is the average body mass over 4000 grams? 
+
+```{r, infer_ex1, exercise=TRUE}
+library(palmerpenguins)
+library(dplyr)
+library(infer)
+penguins_c <- penguins %>% filter(complete.cases(.))
+
+
+penguins_c %>% summarize(mean(body_mass_g))
+
+```
+
+2. Is the average body mass of Adelie penguins over 4000 grams?
+
+```{r, infer_ex2, exercise=TRUE}
+library(palmerpenguins)
+library(dplyr)
+library(infer)
+penguins_c <- penguins %>% filter(complete.cases(.))
+
+penguins_c %>% filter(species == "Adelie") %>% summarize(mean(body_mass_g))
+```
+
+3. Is the median flipper length less than 180 millimeters? 
+
+```{r, infer_ex3, exercise=TRUE}
+library(palmerpenguins)
+library(dplyr)
+library(infer)
+penguins_c <- penguins %>% filter(complete.cases(.))
+
+penguins_c %>% summarize(median(flipper_length_mm))
+```
+
+4. Are Adelie penguins more than half of the population? 
+
+```{r, infer_ex4, exercise=TRUE}
+library(palmerpenguins)
+library(dplyr)
+library(infer)
+penguins_c <- penguins %>% filter(complete.cases(.))
+
+penguins_c %>% summarize(frac_adelie = mean(species == "Adelie"))
+```
+
+5. Are Chinstrap penguins heavier then Gentoo penguins? 
+
+```{r, infer_ex5, exercise=TRUE}
+library(palmerpenguins)
+library(dplyr)
+library(infer)
+penguins_c <- penguins %>% filter(complete.cases(.))
+
+penguins_c %>% group_by(species) %>% summarize(mean(body_mass_g))
+```
+
+6. Is there a correlation between bill length and bill depth? 
+
+```{r, infer_ex6, exercise=TRUE}
+library(palmerpenguins)
+library(dplyr)
+library(infer)
+penguins_c <- penguins %>% filter(complete.cases(.))
+
+penguins_c %>%
+    summarize(corr=cor(bill_length_mm, bill_depth_mm)) %>%
+    pull(corr)
+```
+
+
+7. Are Adelie penguins more likely to be found on Dream island than Biscoe island? 
+
+```{r, infer_ex7, exercise=TRUE}
+library(palmerpenguins)
+library(dplyr)
+library(infer)
+penguins_c <- penguins %>% filter(complete.cases(.))
+
+penguins_c %>% filter(species == "Adelie") %>% group_by(island) %>% summarize(n())
+```

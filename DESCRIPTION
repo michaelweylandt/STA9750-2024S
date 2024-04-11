@@ -2,6 +2,7 @@ Type: Compendium
 Package: STA97502024S
 Title: STA9750 Spring 2024
 Version: 0.0.1
+Depends: tidyverse
 Authors@R: 
     person("Michael", "Weylandt", , "michael.weylandt@baruch.cuny.edu", role = c("aut", "cre"))
 Description: Course Materials for STA9750 Spring 2024 at Baruch College
